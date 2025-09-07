@@ -31,14 +31,14 @@ document.addEventListener("keydown", (event) => {
 });
 
 // Sliders
-document.getElementById("vibe1").addEventListener("input", (e) => {
+document.getElementById("frequency").addEventListener("input", (e) => {
   filter.frequency.value = e.target.value;
 });
 
-document.getElementById("vibe2").addEventListener("input", (e) => {
+document.getElementById("reverb").addEventListener("input", (e) => {
   reverb.decay = parseFloat(e.target.value) * 5;
 });
 
-document.getElementById("vibe3").addEventListener("input", (e) => {
+document.getElementById("distortion").addEventListener("input", (e) => {
   distortion.distortion = parseFloat(e.target.value);
 });

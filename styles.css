@@ -1,0 +1,49 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Verdana', sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #8c96c6, #a5aed6);
+  color: white;
+  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.sliders {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 3rem auto;
+  flex-wrap: wrap;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+input[type="range"] {
+  width: 200px;
+  margin-top: 1rem;
+}
+
+.instructions {
+  font-size: 1.2rem;
+  margin-top: 2rem;
+}

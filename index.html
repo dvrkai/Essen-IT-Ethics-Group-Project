@@ -3,11 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Music Toy - Vibe Coding</title>
+    <title>Interactive Music Toy</title>
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
+    <!-- Tone.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 </head>
 <body>
-    
+  <header>
+    <h1>🎶 Interactive Music Toy 🎶</h1>
+    <p>Press keys or move sliders to create your vibe!</p>
+  </header>
+
+  <main>
+    <div class="sliders">
+      <div class="slider-group">
+        <label for="vibe1">🌈 Vibe 1 (Brightness)</label>
+        <input type="range" id="vibe1" min="100" max="2000" value="800">
+      </div>
+
+      <div class="slider-group">
+        <label for="vibe2">🌊 Vibe 2 (Reverb)</label>
+        <input type="range" id="vibe2" min="0" max="1" step="0.1" value="0.3">
+      </div>
+
+      <div class="slider-group">
+        <label for="vibe3">🔥 Vibe 3 (Distortion)</label>
+        <input type="range" id="vibe3" min="0" max="1" step="0.1" value="0.0">
+      </div>
+    </div>
+
+    <div class="instructions">
+      <p>🎹 Try pressing keys A–K to play notes.</p>
+    </div>
+  </main>
 </body>
 </html>

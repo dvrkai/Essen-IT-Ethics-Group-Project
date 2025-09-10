@@ -5,28 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Music Toy</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="script.js" defer></script>
     <!-- Tone.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
   <header>
     <h1>🎶 Interactive Music Toy 🎶</h1>
-    <p>Press keys or move sliders to create your vibe!</p>
+    <p>Press keys or use buttons/sliders to create your vibe!</p>
   </header>
 
   <main>
+    <div class="instrument-select">
+      <label for="instrument">Instrument:</label>
+      <select id="instrument">
+        <option value="synth">Synth</option>
+        <option value="fm">FM Synth</option>
+        <option value="drum">Drum</option>
+      </select>
+    </div>
+
     <div class="sliders">
       <div class="slider-group">
         <label for="frequency">🌈 Frequency</label>
         <input type="range" id="frequency" min="100" max="2000" value="800">
       </div>
-
       <div class="slider-group">
         <label for="reverb">🌊 Reverb</label>
         <input type="range" id="reverb" min="0" max="1" step="0.1" value="0.3">
       </div>
-
       <div class="slider-group">
         <label for="distortion">🔥 Distortion</label>
         <input type="range" id="distortion" min="0" max="1" step="0.1" value="0.0">
@@ -34,8 +41,21 @@
     </div>
 
     <div class="instructions">
-      <p>🎹 Try pressing keys A–K to play notes.</p>
+      <p>🎹 Try pressing keys A–K or click the buttons below to play notes.</p>
     </div>
+
+    <div class="keys">
+      <button class="key" data-note="C4">A</button>
+      <button class="key" data-note="D4">S</button>
+      <button class="key" data-note="E4">D</button>
+      <button class="key" data-note="F4">F</button>
+      <button class="key" data-note="G4">G</button>
+      <button class="key" data-note="A4">H</button>
+      <button class="key" data-note="B4">J</button>
+      <button class="key" data-note="C5">K</button>
+    </div>
+
+    <div id="visualizer"></div>
   </main>
 </body>
 </html>

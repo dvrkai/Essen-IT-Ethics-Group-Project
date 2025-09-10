@@ -24,11 +24,19 @@ h1 {
   margin-bottom: 0.5rem;
 }
 
+.instrument-select {
+  margin: 2rem auto 1rem auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
 .sliders {
   display: flex;
   justify-content: center;
   gap: 2rem;
-  margin: 3rem auto;
+  margin: 2rem auto;
   flex-wrap: wrap;
 }
 
@@ -46,4 +54,54 @@ input[type="range"] {
 .instructions {
   font-size: 1.2rem;
   margin-top: 2rem;
+}
+
+.keys {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem auto;
+  flex-wrap: wrap;
+}
+
+.key {
+  background: #fff;
+  color: #333;
+  border: none;
+  border-radius: 8px;
+  width: 48px;
+  height: 120px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+  outline: none;
+  user-select: none;
+}
+
+.key.active {
+  background: #ffd6e3;
+  box-shadow: 0 0 16px #fed6e3;
+  transform: scale(1.08);
+}
+
+#visualizer {
+  height: 40px;
+  margin: 2rem auto;
+  background: linear-gradient(90deg, #a8edea, #fed6e3);
+  border-radius: 8px;
+  transition: box-shadow 0.2s;
+  max-width: 400px;
+}
+
+@media (max-width: 600px) {
+  .sliders, .keys {
+    gap: 0.5rem;
+  }
+  .key {
+    width: 32px;
+    height: 80px;
+    font-size: 1rem;
+  }
 }

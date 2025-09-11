@@ -24,6 +24,11 @@ const visualizer = document.getElementById("visualizer");
 // Tone.js nodes
 let synth, drum, currentInstrument, reverb, distortion, filter;
 
+// Polyphonic playback system
+const activeNotes = new Map(); // Track active notes and their sources
+const maxPolyphony = 6; // Maximum simultaneous notes
+const pressedKeys = new Set(); // Track currently pressed keys
+
 // Setup instruments and effects
 function setupAudio() {
   // Disconnect previous nodes if any
@@ -53,46 +58,210 @@ function setupAudio() {
   }
 }
 
-// Play note with visual effect
+// Create independent synthesizer for polyphonic playback
+function createSynthInstance() {
+  let synthInstance;
+  
+  switch (instrumentSelect.value) {
+    case "synth":
+      synthInstance = new Tone.Synth();
+      break;
+    case "fm":
+      synthInstance = new Tone.FMSynth();
+      break;
+    case "drum":
+      synthInstance = new Tone.MembraneSynth();
+      break;
+    default:
+      synthInstance = new Tone.Synth();
+  }
+  
+  // Connect to effects chain
+  synthInstance.connect(filter).connect(distortion).connect(reverb);
+  return synthInstance;
+}
+
+// Start playing a note (for sustained playback)
+function startNote(note, keyElem) {
+  Tone.start(); // Ensure audio context is started
+  
+  // Check polyphony limit
+  if (activeNotes.size >= maxPolyphony) {
+    return;
+  }
+  
+  // Don't start if already playing
+  if (activeNotes.has(note)) {
+    return;
+  }
+  
+  // Create independent synthesizer instance
+  const synthInstance = createSynthInstance();
+  
+  // Start the note
+  if (instrumentSelect.value === "drum") {
+    synthInstance.triggerAttack("C2");
+  } else {
+    synthInstance.triggerAttack(note);
+  }
+  
+  // Store the active note
+  activeNotes.set(note, synthInstance);
+  
+  // Visual feedback
+  if (keyElem) {
+    keyElem.classList.add("active");
+  }
+  visualizer.style.boxShadow = `0 0 24px #${Math.floor(Math.random()*16777215).toString(16)}`;
+}
+
+// Stop playing a note
+function stopNote(note, keyElem) {
+  const synthInstance = activeNotes.get(note);
+  if (synthInstance) {
+    synthInstance.triggerRelease();
+    
+    // Clean up after a short delay to allow release envelope
+    setTimeout(() => {
+      synthInstance.dispose();
+    }, 1000);
+    
+    activeNotes.delete(note);
+  }
+  
+  // Visual feedback
+  if (keyElem) {
+    keyElem.classList.remove("active");
+  }
+  
+  // Clear visualizer if no notes are playing
+  if (activeNotes.size === 0) {
+    visualizer.style.boxShadow = "";
+  }
+}
+
+// Play note with visual effect (for sequencer and one-shot playback)
 function playNote(note, keyElem) {
   Tone.start(); // Ensure audio context is started
 
   // Visual feedback
   if (keyElem) {
     keyElem.classList.add("active");
-    visualizer.style.boxShadow = `0 0 24px #${Math.floor(Math.random()*16777215).toString(16)}`;
     setTimeout(() => {
       keyElem.classList.remove("active");
-      visualizer.style.boxShadow = "";
-    }, 200);
-  } else {
-    visualizer.style.boxShadow = `0 0 24px #${Math.floor(Math.random()*16777215).toString(16)}`;
-    setTimeout(() => {
-      visualizer.style.boxShadow = "";
     }, 200);
   }
+  visualizer.style.boxShadow = `0 0 24px #${Math.floor(Math.random()*16777215).toString(16)}`;
+  setTimeout(() => {
+    if (activeNotes.size === 0) {
+      visualizer.style.boxShadow = "";
+    }
+  }, 200);
 
+  // Create independent synthesizer for one-shot playback
+  const synthInstance = createSynthInstance();
+  
   // Play sound
   if (instrumentSelect.value === "drum") {
-    currentInstrument.triggerAttackRelease("C2", "8n");
+    synthInstance.triggerAttackRelease("C2", "8n");
   } else {
-    currentInstrument.triggerAttackRelease(note, "8n");
+    synthInstance.triggerAttackRelease(note, "8n");
   }
+  
+  // Clean up after playback
+  setTimeout(() => {
+    synthInstance.dispose();
+  }, 1000);
 }
 
-// Keyboard support
+// Keyboard support with sustained playback
 document.addEventListener("keydown", (event) => {
   const note = keyMap[event.key];
-  if (note) {
+  if (note && !pressedKeys.has(event.key)) {
+    // Prevent key repeat
+    pressedKeys.add(event.key);
     const idx = notes.indexOf(note);
-    playNote(note, keys[idx]);
+    startNote(note, keys[idx]);
   }
 });
 
-// Button support (mouse/touch)
+document.addEventListener("keyup", (event) => {
+  const note = keyMap[event.key];
+  if (note && pressedKeys.has(event.key)) {
+    pressedKeys.delete(event.key);
+    const idx = notes.indexOf(note);
+    stopNote(note, keys[idx]);
+  }
+});
+
+// Button support with sustained playback (mouse/touch)
 keys.forEach((keyBtn, idx) => {
-  keyBtn.addEventListener("mousedown", () => playNote(notes[idx], keyBtn));
-  keyBtn.addEventListener("touchstart", () => playNote(notes[idx], keyBtn));
+  let isPressed = false;
+  
+  // Mouse events
+  keyBtn.addEventListener("mousedown", (event) => {
+    event.preventDefault();
+    if (!isPressed) {
+      isPressed = true;
+      startNote(notes[idx], keyBtn);
+    }
+  });
+  
+  keyBtn.addEventListener("mouseup", (event) => {
+    event.preventDefault();
+    if (isPressed) {
+      isPressed = false;
+      stopNote(notes[idx], keyBtn);
+    }
+  });
+  
+  keyBtn.addEventListener("mouseleave", (event) => {
+    if (isPressed) {
+      isPressed = false;
+      stopNote(notes[idx], keyBtn);
+    }
+  });
+  
+  // Touch events
+  keyBtn.addEventListener("touchstart", (event) => {
+    event.preventDefault();
+    if (!isPressed) {
+      isPressed = true;
+      startNote(notes[idx], keyBtn);
+    }
+  });
+  
+  keyBtn.addEventListener("touchend", (event) => {
+    event.preventDefault();
+    if (isPressed) {
+      isPressed = false;
+      stopNote(notes[idx], keyBtn);
+    }
+  });
+  
+  keyBtn.addEventListener("touchcancel", (event) => {
+    if (isPressed) {
+      isPressed = false;
+      stopNote(notes[idx], keyBtn);
+    }
+  });
+});
+
+// Clean up any stuck notes when window loses focus
+window.addEventListener("blur", () => {
+  // Stop all active notes
+  for (const [note, synthInstance] of activeNotes) {
+    synthInstance.triggerRelease();
+    setTimeout(() => {
+      synthInstance.dispose();
+    }, 1000);
+  }
+  activeNotes.clear();
+  pressedKeys.clear();
+  
+  // Clear visual feedback
+  keys.forEach(key => key.classList.remove("active"));
+  visualizer.style.boxShadow = "";
 });
 
 // Sliders update effects in real time
@@ -339,11 +508,11 @@ function loadPreset(presetName) {
   });
 }
 
-// Keyboard shortcuts for sequencer
+// Keyboard shortcuts for sequencer (separate event listener to avoid conflicts)
 document.addEventListener('keydown', (event) => {
-  // Don't interfere with existing note playing
+  // Handle sequencer shortcuts only if not playing notes
   if (keyMap[event.key]) {
-    return;
+    return; // Let note playing take priority
   }
   
   switch (event.key) {
@@ -356,11 +525,13 @@ document.addEventListener('keydown', (event) => {
       }
       break;
     case 'l': // L to toggle loop
+      event.preventDefault();
       isLooping = !isLooping;
       loopToggleBtn.textContent = isLooping ? '🔄 Loop: ON' : '🔄 Loop: OFF';
       loopToggleBtn.classList.toggle('active', isLooping);
       break;
     case 'c': // C to clear all
+      event.preventDefault();
       notes.forEach(note => {
         sequencerPattern[note] = new Array(8).fill(false);
       });

@@ -95,6 +95,155 @@ input[type="range"] {
   max-width: 400px;
 }
 
+/* Step Sequencer Styles */
+.sequencer-section {
+  margin: 3rem auto;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  max-width: 900px;
+}
+
+.sequencer-section h2 {
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.sequencer-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.control-btn {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.7rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  user-select: none;
+}
+
+.control-btn:hover {
+  background: #357abd;
+  transform: translateY(-1px);
+}
+
+.control-btn:active {
+  transform: translateY(0);
+}
+
+.control-btn.active {
+  background: #27ae60;
+}
+
+.tempo-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tempo-control label {
+  font-size: 0.9rem;
+}
+
+.tempo-control input[type="range"] {
+  width: 150px;
+}
+
+.sequencer-grid {
+  display: grid;
+  grid-template-columns: 100px repeat(8, 1fr);
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  border-radius: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.step-labels {
+  display: contents;
+}
+
+.step-label {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+.step-number {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  position: relative;
+}
+
+.step-number.current-step {
+  background: #f39c12;
+  color: white;
+  font-weight: bold;
+  animation: pulse 0.3s ease-in-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.note-row {
+  display: contents;
+}
+
+.note-label {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-cell {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-cell:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.step-cell.active {
+  background: #e74c3c;
+  border-color: #c0392b;
+}
+
+.step-cell.active:hover {
+  background: #d62c1a;
+}
+
 @media (max-width: 600px) {
   .sliders, .keys {
     gap: 0.5rem;
@@ -103,5 +252,38 @@ input[type="range"] {
     width: 32px;
     height: 80px;
     font-size: 1rem;
+  }
+  
+  .sequencer-section {
+    margin: 2rem 1rem;
+    padding: 1rem;
+  }
+  
+  .sequencer-controls {
+    gap: 0.5rem;
+  }
+  
+  .control-btn {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .sequencer-grid {
+    grid-template-columns: 80px repeat(8, 1fr);
+    gap: 1px;
+    padding: 0.5rem;
+  }
+  
+  .note-label {
+    font-size: 0.7rem;
+    padding: 0.3rem;
+  }
+  
+  .step-cell {
+    min-height: 30px;
+  }
+  
+  .tempo-control input[type="range"] {
+    width: 120px;
   }
 }

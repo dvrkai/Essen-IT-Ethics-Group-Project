@@ -56,6 +56,132 @@
     </div>
 
     <div id="visualizer"></div>
+
+    <!-- Step Sequencer Section -->
+    <section class="sequencer-section">
+      <h2>🎵 Step Sequencer</h2>
+      
+      <div class="sequencer-controls">
+        <button id="playStopBtn" class="control-btn">▶️ Start</button>
+        <button id="loopToggleBtn" class="control-btn">🔄 Loop: OFF</button>
+        <button id="clearAllBtn" class="control-btn">🗑️ Clear All</button>
+        
+        <div class="tempo-control">
+          <label for="tempoSlider">🎼 Tempo: <span id="tempoValue">120</span> BPM</label>
+          <input type="range" id="tempoSlider" min="60" max="180" value="120">
+        </div>
+      </div>
+
+      <div class="sequencer-grid">
+        <div class="step-labels">
+          <div class="step-label">Step</div>
+          <div class="step-number">1</div>
+          <div class="step-number">2</div>
+          <div class="step-number">3</div>
+          <div class="step-number">4</div>
+          <div class="step-number">5</div>
+          <div class="step-number">6</div>
+          <div class="step-number">7</div>
+          <div class="step-number">8</div>
+        </div>
+        
+        <div class="note-row" data-note="C4">
+          <div class="note-label">A (C4)</div>
+          <div class="step-cell" data-step="0"></div>
+          <div class="step-cell" data-step="1"></div>
+          <div class="step-cell" data-step="2"></div>
+          <div class="step-cell" data-step="3"></div>
+          <div class="step-cell" data-step="4"></div>
+          <div class="step-cell" data-step="5"></div>
+          <div class="step-cell" data-step="6"></div>
+          <div class="step-cell" data-step="7"></div>
+        </div>
+        
+        <div class="note-row" data-note="D4">
+          <div class="note-label">S (D4)</div>
+          <div class="step-cell" data-step="0"></div>
+          <div class="step-cell" data-step="1"></div>
+          <div class="step-cell" data-step="2"></div>
+          <div class="step-cell" data-step="3"></div>
+          <div class="step-cell" data-step="4"></div>
+          <div class="step-cell" data-step="5"></div>
+          <div class="step-cell" data-step="6"></div>
+          <div class="step-cell" data-step="7"></div>
+        </div>
+        
+        <div class="note-row" data-note="E4">
+          <div class="note-label">D (E4)</div>
+          <div class="step-cell" data-step="0"></div>
+          <div class="step-cell" data-step="1"></div>
+          <div class="step-cell" data-step="2"></div>
+          <div class="step-cell" data-step="3"></div>
+          <div class="step-cell" data-step="4"></div>
+          <div class="step-cell" data-step="5"></div>
+          <div class="step-cell" data-step="6"></div>
+          <div class="step-cell" data-step="7"></div>
+        </div>
+        
+        <div class="note-row" data-note="F4">
+          <div class="note-label">F (F4)</div>
+          <div class="step-cell" data-step="0"></div>
+          <div class="step-cell" data-step="1"></div>
+          <div class="step-cell" data-step="2"></div>
+          <div class="step-cell" data-step="3"></div>
+          <div class="step-cell" data-step="4"></div>
+          <div class="step-cell" data-step="5"></div>
+          <div class="step-cell" data-step="6"></div>
+          <div class="step-cell" data-step="7"></div>
+        </div>
+        
+        <div class="note-row" data-note="G4">
+          <div class="note-label">G (G4)</div>
+          <div class="step-cell" data-step="0"></div>
+          <div class="step-cell" data-step="1"></div>
+          <div class="step-cell" data-step="2"></div>
+          <div class="step-cell" data-step="3"></div>
+          <div class="step-cell" data-step="4"></div>
+          <div class="step-cell" data-step="5"></div>
+          <div class="step-cell" data-step="6"></div>
+          <div class="step-cell" data-step="7"></div>
+        </div>
+        
+        <div class="note-row" data-note="A4">
+          <div class="note-label">H (A4)</div>
+          <div class="step-cell" data-step="0"></div>
+          <div class="step-cell" data-step="1"></div>
+          <div class="step-cell" data-step="2"></div>
+          <div class="step-cell" data-step="3"></div>
+          <div class="step-cell" data-step="4"></div>
+          <div class="step-cell" data-step="5"></div>
+          <div class="step-cell" data-step="6"></div>
+          <div class="step-cell" data-step="7"></div>
+        </div>
+        
+        <div class="note-row" data-note="B4">
+          <div class="note-label">J (B4)</div>
+          <div class="step-cell" data-step="0"></div>
+          <div class="step-cell" data-step="1"></div>
+          <div class="step-cell" data-step="2"></div>
+          <div class="step-cell" data-step="3"></div>
+          <div class="step-cell" data-step="4"></div>
+          <div class="step-cell" data-step="5"></div>
+          <div class="step-cell" data-step="6"></div>
+          <div class="step-cell" data-step="7"></div>
+        </div>
+        
+        <div class="note-row" data-note="C5">
+          <div class="note-label">K (C5)</div>
+          <div class="step-cell" data-step="0"></div>
+          <div class="step-cell" data-step="1"></div>
+          <div class="step-cell" data-step="2"></div>
+          <div class="step-cell" data-step="3"></div>
+          <div class="step-cell" data-step="4"></div>
+          <div class="step-cell" data-step="5"></div>
+          <div class="step-cell" data-step="6"></div>
+          <div class="step-cell" data-step="7"></div>
+        </div>
+      </div>
+    </section>
   </main>
 </body>
 </html>

@@ -55,7 +55,10 @@
       <button class="key" data-note="C5">K</button>
     </div>
 
-    <div id="visualizer"></div>
+    <div class="visualizer-controls">
+        <button id="toggleVisualizerBtn">🔄 Switch to Circle Visualizer</button>
+    </div>
+    <canvas id="visualizer" width="800" height="400"></canvas>
 
     <!-- Step Sequencer Section -->
     <section class="sequencer-section">
@@ -179,6 +182,24 @@
           <div class="step-cell" data-step="5"></div>
           <div class="step-cell" data-step="6"></div>
           <div class="step-cell" data-step="7"></div>
+        </div>
+      </div>
+
+      <!-- Pattern Management Section -->
+      <div class="pattern-management">
+        <h3>💾 Save/Load Pattern</h3>
+        <div class="pattern-controls">
+          <label for="saveSlotSelect">Save Slot:</label>
+          <select id="saveSlotSelect">
+            <option value="1">Slot 1</option>
+            <option value="2">Slot 2</option>
+            <option value="3">Slot 3</option>
+            <option value="4">Slot 4</option>
+            <option value="5">Slot 5</option>
+          </select>
+          <button id="savePatternBtn" class="control-btn">Save</button>
+          <button id="loadPatternBtn" class="control-btn">Load</button>
+          <button id="deletePatternBtn" class="control-btn">Delete</button>
         </div>
       </div>
     </section>

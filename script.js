@@ -20,14 +20,34 @@ const reverbSlider = document.getElementById("reverb");
 const distortionSlider = document.getElementById("distortion");
 const keys = document.querySelectorAll(".key");
 const visualizer = document.getElementById("visualizer");
+const toggleBtn = document.getElementById("toggleVisualizerBtn");
 
 // Tone.js nodes
-let synth, drum, currentInstrument, reverb, distortion, filter;
+let synth, drum, currentInstrument, reverb, distortion, filter, analyser;
 
 // Polyphonic playback system
 const activeNotes = new Map(); // Track active notes and their sources
 const maxPolyphony = 6; // Maximum simultaneous notes
 const pressedKeys = new Set(); // Track currently pressed keys
+
+// === NEW VISUALIZER DATA STRUCTURES ===
+let canvas = document.getElementById("visualizer");
+let ctx = canvas.getContext("2d");
+let visualizerMode = "bar"; // default
+const particles = []; 
+const noteBlooms = []; // Holds the active visual blooms for each note
+
+// Map each note to a specific angle on the circle (in radians)
+const noteAngleMap = {
+    "C4": 0,                      // Right
+    "D4": Math.PI * 0.25,         // Bottom-right
+    "E4": Math.PI * 0.5,          // Bottom
+    "F4": Math.PI * 0.75,         // Bottom-left
+    "G4": Math.PI,                // Left
+    "A4": Math.PI * 1.25,         // Top-left
+    "B4": Math.PI * 1.5,          // Top
+    "C5": Math.PI * 1.75          // Top-right
+};
 
 // Setup instruments and effects
 function setupAudio() {
@@ -40,6 +60,9 @@ function setupAudio() {
   distortion = new Tone.Distortion(distortionSlider.value).toDestination();
   reverb = new Tone.Reverb(2).toDestination();
   reverb.wet.value = reverbSlider.value;
+    
+  analyser = new Tone.Analyser("fft", 128); 
+  reverb.connect(analyser);
 
   // Instrument selection
   switch (instrumentSelect.value) {
@@ -112,7 +135,14 @@ function startNote(note, keyElem) {
   if (keyElem) {
     keyElem.classList.add("active");
   }
-  visualizer.style.boxShadow = `0 0 24px #${Math.floor(Math.random()*16777215).toString(16)}`;
+    // --- Create a corresponding visual bloom ---
+    const bloom = {
+        angle: noteAngleMap[note], // Get the pre-defined angle for this note
+        strength: 100, // Initial size/impact of the bloom
+        life: 120 // Lifespan in frames (e.g., 60fps = 2 seconds)
+    };
+    noteBlooms.push(bloom);
+    createParticles(canvas.width / 2, canvas.height / 2); // Also trigger a central particle burst
 }
 
 // Stop playing a note
@@ -142,36 +172,28 @@ function stopNote(note, keyElem) {
 
 // Play note with visual effect (for sequencer and one-shot playback)
 function playNote(note, keyElem) {
-  Tone.start(); // Ensure audio context is started
-
-  // Visual feedback
-  if (keyElem) {
-    keyElem.classList.add("active");
-    setTimeout(() => {
-      keyElem.classList.remove("active");
-    }, 200);
-  }
-  visualizer.style.boxShadow = `0 0 24px #${Math.floor(Math.random()*16777215).toString(16)}`;
-  setTimeout(() => {
-    if (activeNotes.size === 0) {
-      visualizer.style.boxShadow = "";
+    Tone.start();
+    if (keyElem) {
+        keyElem.classList.add("active");
+        setTimeout(() => keyElem.classList.remove("active"), 200);
     }
-  }, 200);
 
-  // Create independent synthesizer for one-shot playback
-  const synthInstance = createSynthInstance();
-  
-  // Play sound
-  if (instrumentSelect.value === "drum") {
-    synthInstance.triggerAttackRelease("C2", "8n");
-  } else {
-    synthInstance.triggerAttackRelease(note, "8n");
-  }
-  
-  // Clean up after playback
-  setTimeout(() => {
-    synthInstance.dispose();
-  }, 1000);
+    // --- Create a corresponding visual bloom for the sequencer ---
+    const bloom = {
+        angle: noteAngleMap[note],
+        strength: 100,
+        life: 120
+    };
+    noteBlooms.push(bloom);
+    createParticles(canvas.width / 2, canvas.height / 2);
+
+    const synthInstance = createSynthInstance();
+    if (instrumentSelect.value === "drum") {
+        synthInstance.triggerAttackRelease("C2", "8n");
+    } else {
+        synthInstance.triggerAttackRelease(note, "8n");
+    }
+    setTimeout(() => synthInstance.dispose(), 1000);
 }
 
 // Keyboard support with sustained playback
@@ -424,32 +446,37 @@ function playSequencerStep() {
   });
 }
 
-// Save pattern to localStorage
-function savePattern(name) {
+// --- PATTERN SAVE/LOAD ---
+const saveSlotSelect = document.getElementById('saveSlotSelect');
+const savePatternBtn = document.getElementById('savePatternBtn');
+const loadPatternBtn = document.getElementById('loadPatternBtn');
+const deletePatternBtn = document.getElementById('deletePatternBtn');
+
+// Save pattern to the selected slot
+savePatternBtn.addEventListener('click', () => {
+  const slot = saveSlotSelect.value;
   const patterns = JSON.parse(localStorage.getItem('sequencerPatterns') || '{}');
-  patterns[name] = {
+  patterns[slot] = {
     pattern: sequencerPattern,
     tempo: tempo,
     isLooping: isLooping
   };
   localStorage.setItem('sequencerPatterns', JSON.stringify(patterns));
-}
+  alert(`Pattern saved to Slot ${slot}`);
+});
 
-// Load pattern from localStorage
-function loadPattern(name) {
+// Load pattern from the selected slot
+loadPatternBtn.addEventListener('click', () => {
+  const slot = saveSlotSelect.value;
   const patterns = JSON.parse(localStorage.getItem('sequencerPatterns') || '{}');
-  if (patterns[name]) {
-    const savedPattern = patterns[name];
+  
+  if (patterns[slot]) {
+    if (isPlaying) stopSequencer();
     
-    // Stop current playback
-    if (isPlaying) {
-      stopSequencer();
-    }
-    
-    // Load pattern
-    sequencerPattern = savedPattern.pattern;
-    tempo = savedPattern.tempo || 120;
-    isLooping = savedPattern.isLooping || false;
+    const saved = patterns[slot];
+    sequencerPattern = saved.pattern;
+    tempo = saved.tempo || 120;
+    isLooping = saved.isLooping || false;
     
     // Update UI
     tempoSlider.value = tempo;
@@ -457,16 +484,33 @@ function loadPattern(name) {
     loopToggleBtn.textContent = isLooping ? '🔄 Loop: ON' : '🔄 Loop: OFF';
     loopToggleBtn.classList.toggle('active', isLooping);
     
-    // Update step cells
     stepCells.forEach(cell => {
-      const noteRow = cell.closest('.note-row');
-      const note = noteRow.dataset.note;
+      const note = cell.closest('.note-row').dataset.note;
       const step = parseInt(cell.dataset.step);
-      const isActive = sequencerPattern[note][step];
-      cell.classList.toggle('active', isActive);
+      cell.classList.toggle('active', sequencerPattern[note][step]);
     });
+    alert(`Pattern loaded from Slot ${slot}`);
+  } else {
+    alert(`Slot ${slot} is empty.`);
   }
-}
+});
+
+// Delete pattern from the selected slot
+deletePatternBtn.addEventListener('click', () => {
+    const slot = saveSlotSelect.value;
+    const patterns = JSON.parse(localStorage.getItem('sequencerPatterns') || '{}');
+
+    if (patterns[slot]) {
+        if (confirm(`Are you sure you want to delete the pattern in Slot ${slot}?`)) {
+            delete patterns[slot];
+            localStorage.setItem('sequencerPatterns', JSON.stringify(patterns));
+            alert(`Pattern in Slot ${slot} has been deleted.`);
+        }
+    } else {
+        alert(`Slot ${slot} is already empty.`);
+    }
+});
+
 
 // Add some preset patterns
 function loadPreset(presetName) {
@@ -549,6 +593,120 @@ document.addEventListener('keydown', (event) => {
 setupAudio();
 initializeSequencer();
 
+// === Visualizer ===
+toggleBtn.addEventListener("click", () => {
+    visualizerMode = visualizerMode === "bar" ? "circle" : "bar";
+    toggleBtn.textContent = visualizerMode === "bar" ? "🔄 Switch to Circle Visualizer" : "🔄 Switch to Bar Visualizer";
+});
+
+function createParticles(x, y) {
+    const particleCount = 20;
+    for (let i = 0; i < particleCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 4 + 1;
+        particles.push({
+            x: x, y: y,
+            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+            life: 80, alpha: 1,
+            color: `hsl(${Math.random() * 50 + 280}, 100%, 75%)`
+        });
+    }
+}
+
+// === COMPLETELY NEW drawVisualizer FUNCTION ===
+function drawVisualizer() {
+    requestAnimationFrame(drawVisualizer);
+    if (!analyser) return;
+
+    const values = analyser.getValue();
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (visualizerMode === "bar") {
+        const barWidth = canvas.width / values.length;
+        ctx.shadowColor = '#c837f5';
+        ctx.shadowBlur = 10;
+        values.forEach((val, i) => {
+            const height = (val + 140) * 2.5;
+            ctx.fillStyle = '#c837f5';
+            ctx.fillRect(i * barWidth, canvas.height - height, barWidth, height);
+        });
+        ctx.shadowBlur = 0;
+    } else { // Circle visualizer mode
+        
+        // --- 1. Update and Animate Note Blooms ---
+        for (let i = noteBlooms.length - 1; i >= 0; i--) {
+            const bloom = noteBlooms[i];
+            bloom.strength *= 0.96; // Bloom's impact shrinks over time
+            bloom.life--;
+            if (bloom.life <= 0) {
+                noteBlooms.splice(i, 1); // Remove dead blooms
+            }
+        }
+
+        // --- 2. Draw Main Waveform Circle ---
+        ctx.beginPath();
+        const baseRadius = 100;
+        const totalPoints = 256; // How many points to draw around the circle
+        
+        for(let i = 0; i < totalPoints; i++) {
+            const angle = (i / totalPoints) * Math.PI * 2;
+            const idleAnimation = Math.sin(Date.now() * 0.002 + i * 0.1) * 2;
+            
+            // --- Calculate total influence from all active blooms ---
+            let bloomInfluence = 0;
+            noteBlooms.forEach(bloom => {
+                // Find angular distance between the bloom and the current point
+                let angleDiff = Math.abs(bloom.angle - angle);
+                if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff; // Handle wrap-around
+                
+                // Use a Gaussian falloff for a smooth bump effect
+                const falloff = Math.exp(-(angleDiff * angleDiff) / 0.1);
+                bloomInfluence += bloom.strength * falloff;
+            });
+
+            // The final radius is the base + idle animation + bloom influence
+            const length = baseRadius + idleAnimation + bloomInfluence;
+            const x = centerX + Math.cos(angle - Math.PI / 2) * length;
+            const y = centerY + Math.sin(angle - Math.PI / 2) * length;
+
+            if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
+        }
+        ctx.closePath();
+        
+        ctx.strokeStyle = '#e040fb';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#e040fb';
+        ctx.shadowBlur = 15;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // --- 3. Update and Draw Particles ---
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life--;
+            p.alpha = p.life / 80;
+            
+            ctx.beginPath();
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.alpha;
+            ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (p.life <= 0) {
+                particles.splice(i, 1);
+            }
+        }
+        ctx.globalAlpha = 1;
+    }
+}
+
+drawVisualizer();
 /*
   Code comments:
   - setupAudio(): Initializes instruments and effects based on user selection

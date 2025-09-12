@@ -6,8 +6,8 @@
 }
 
 body {
-  background: linear-gradient(135deg, #8c96c6, #a5aed6);
-  color: white;
+  background: #0d041a; 
+  color: #e0e0e0; /* Lighter text for better contrast */
   text-align: center;
   min-height: 100vh;
   display: flex;
@@ -16,7 +16,7 @@ body {
 
 header {
   padding: 2rem;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.4); 
 }
 
 h1 {
@@ -24,12 +24,22 @@ h1 {
   margin-bottom: 0.5rem;
 }
 
-.instrument-select {
+#instrument {
+  background: white;
+  color: black;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 1rem;
   margin: 2rem auto 1rem auto;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 1rem;
+}
+
+.instrument-select {
+  font-size: 1.2rem;
 }
 
 .sliders {
@@ -87,12 +97,31 @@ input[type="range"] {
 }
 
 #visualizer {
-  height: 40px;
+  display: block;
   margin: 2rem auto;
-  background: linear-gradient(90deg, #a8edea, #fed6e3);
+  background: transparent;
   border-radius: 8px;
   transition: box-shadow 0.2s;
-  max-width: 400px;
+}
+
+.visualizer-controls {
+  margin: 1rem auto;
+}
+
+#toggleVisualizerBtn {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+#toggleVisualizerBtn:hover {
+  background: #357abd;
+  transform: translateY(-1px);
 }
 
 /* Step Sequencer Styles */
@@ -242,6 +271,44 @@ input[type="range"] {
 
 .step-cell.active:hover {
   background: #d62c1a;
+}
+
+/* Pattern Management Styles */
+.pattern-management {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pattern-management h3 {
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+}
+
+.pattern-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.pattern-controls label {
+  font-size: 1rem;
+}
+
+#saveSlotSelect {
+  background: white;
+  color: black;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+#patternName::placeholder {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 @media (max-width: 600px) {

@@ -4,7 +4,7 @@ Thanks for collaborating on the Interactive Music Toy.
 Workflow
 Main branch = stable. Do not push directly.
 
-
+ 
 Create feature branches (for example, feature/sliders, bugfix/audio).
 
 

@@ -15,6 +15,7 @@ const notes = Object.values(keyMap);
 
 // DOM elements
 const instrumentSelect = document.getElementById("instrument");
+const volumeSlider = document.getElementById("volume");
 const filterSlider = document.getElementById("frequency");
 const reverbSlider = document.getElementById("reverb");
 const distortionSlider = document.getElementById("distortion");
@@ -22,8 +23,7 @@ const keys = document.querySelectorAll(".key");
 const visualizer = document.getElementById("visualizer");
 const toggleBtn = document.getElementById("toggleVisualizerBtn");
 
-// Tone.js nodes
-let synth, drum, currentInstrument, reverb, distortion, filter, analyser;
+let synth, drum, currentInstrument, reverb, distortion, filter, analyser, masterGain, drumGain;
 
 // Polyphonic playback system
 const activeNotes = new Map(); // Track active notes and their sources
@@ -51,31 +51,72 @@ const noteAngleMap = {
 
 // Setup instruments and effects
 function setupAudio() {
-  // Disconnect previous nodes if any
-  if (synth) synth.disconnect();
-  if (drum) drum.disconnect();
+  if (synth) {
+    synth.dispose();
+    synth = null;
+  }
+  if (drum) {
+    drum.dispose();
+    drum = null;
+  }
+  if (filter) {
+    filter.dispose();
+    filter = null;
+  }
+  if (distortion) {
+    distortion.dispose();
+    distortion = null;
+  }
+  if (reverb) {
+    reverb.dispose();
+    reverb = null;
+  }
+  if (analyser) {
+    analyser.dispose();
+    analyser = null;
+  }
+  if (masterGain) {
+    masterGain.dispose();
+    masterGain = null;
+  }
+  if (drumGain) {
+    drumGain.dispose();
+    drumGain = null;
+  }
 
   // Effects
-  filter = new Tone.Filter(filterSlider.value, "lowpass").toDestination();
-  distortion = new Tone.Distortion(distortionSlider.value).toDestination();
-  reverb = new Tone.Reverb(2).toDestination();
+  filter = new Tone.Filter(filterSlider.value, "lowpass");
+  distortion = new Tone.Distortion(distortionSlider.value);
+  reverb = new Tone.Reverb(2);
   reverb.wet.value = reverbSlider.value;
-    
-  analyser = new Tone.Analyser("fft", 128); 
-  reverb.connect(analyser);
+
+  masterGain = new Tone.Gain(volumeSlider.value).toDestination();
+  drumGain = new Tone.Gain(0.7); // Slightly reduce drum volume
+
+  // Connect effects chain
+  filter.connect(distortion);
+  distortion.connect(reverb);
+  reverb.connect(masterGain);
+
+  analyser = new Tone.Analyser("fft", 128);
+  masterGain.connect(analyser);
 
   // Instrument selection
   switch (instrumentSelect.value) {
     case "synth":
-      synth = new Tone.Synth().connect(filter).connect(distortion).connect(reverb);
+      synth = new Tone.Synth();
+      synth.connect(filter);
       currentInstrument = synth;
       break;
     case "fm":
-      synth = new Tone.FMSynth().connect(filter).connect(distortion).connect(reverb);
+      synth = new Tone.FMSynth();
+      synth.connect(filter);
       currentInstrument = synth;
       break;
     case "drum":
-      drum = new Tone.MembraneSynth().connect(filter).connect(distortion).connect(reverb);
+      drum = new Tone.MembraneSynth();
+      drum.connect(drumGain);
+      drumGain.connect(filter);
       currentInstrument = drum;
       break;
   }
@@ -84,23 +125,25 @@ function setupAudio() {
 // Create independent synthesizer for polyphonic playback
 function createSynthInstance() {
   let synthInstance;
-  
+
   switch (instrumentSelect.value) {
     case "synth":
       synthInstance = new Tone.Synth();
+      synthInstance.connect(filter);
       break;
     case "fm":
       synthInstance = new Tone.FMSynth();
+      synthInstance.connect(filter);
       break;
     case "drum":
       synthInstance = new Tone.MembraneSynth();
+      synthInstance.connect(drumGain);
       break;
     default:
       synthInstance = new Tone.Synth();
+      synthInstance.connect(filter);
   }
-  
-  // Connect to effects chain
-  synthInstance.connect(filter).connect(distortion).connect(reverb);
+
   return synthInstance;
 }
 
@@ -287,6 +330,9 @@ window.addEventListener("blur", () => {
 });
 
 // Sliders update effects in real time
+volumeSlider.addEventListener("input", () => {
+  if (masterGain) masterGain.gain.value = volumeSlider.value;
+});
 filterSlider.addEventListener("input", () => {
   if (filter) filter.frequency.value = filterSlider.value;
 });

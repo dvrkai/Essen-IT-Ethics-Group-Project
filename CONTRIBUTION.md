@@ -56,3 +56,7 @@ Ask before overwriting others’ work.
 
 
 Document major design and ethics decisions in /docs.
+
+| Name | Contribution |
+|------|---------------|
+| Thao | Overlooked code and changes, made starting files and basics, added volume adjusters, frequency, reverb, distortions, and key maps |

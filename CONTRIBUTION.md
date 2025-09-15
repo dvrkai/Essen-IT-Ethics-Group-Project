@@ -60,7 +60,7 @@ Document major design and ethics decisions in /docs.
 | Name | Contribution |
 |------|---------------|
 | Thao | Overlooked code and changes with bug fixes, made starting files and basics, added volume adjusters, frequency, reverb, distortions, and key maps |
-| Binh |  |
+| Binh | Added a bar and circle visualizer, changed to a darker theme , added a save and load system to the existing step squencer. |
 | Minh |  |
 | Bang Anh |  |
 | Kiet |  |

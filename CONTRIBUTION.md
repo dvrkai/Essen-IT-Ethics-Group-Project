@@ -60,7 +60,7 @@ Document major design and ethics decisions in /docs.
 | Name | Contribution |
 |------|---------------|
 | Thao | Overlooked code and changes with bug fixes, made starting files and basics, added volume adjusters, frequency, reverb, distortions, and key maps |
-| Binh |  |
+| Binh | Added a bar and circle visualizer, changed to a darker theme , added a save and load system to the existing step squencer. |
 | Minh |  |
 | Bang Anh | Add a step sequencer feature with a loop toggle, start/stop controls, tempo adjustment, and an improved user interface. Additionally, enable polyphony to allow users to play multiple keys (chords) simultaneously. |
 | Kiet |  |

@@ -61,7 +61,7 @@ Document major design and ethics decisions in /docs.
 |------|---------------|
 | Thao | Overlooked code and changes with bug fixes, made starting files and basics, added volume adjusters, frequency, reverb, distortions, and key maps |
 | Binh | Added a bar and circle visualizer, changed to a darker theme , added a save and load system to the existing step squencer. |
-| Minh |  |
+| Minh | Add a feature to display buttons on the website, adding flexibility and ease of use for everyone. Additionally, edit the wireframe to make the tool easier to see. |
 | Bang Anh | Add a step sequencer feature with a loop toggle, start/stop controls, tempo adjustment, and an improved user interface. Additionally, enable polyphony to allow users to play multiple keys (chords) simultaneously. |
 | Kiet | Planning the entire project, tasks division, write report, Added a new Song Maker section with dynamic sequencer grids, tempo and playback controls, and song slot management in index.html; refactored script.js to support multiple sequencers with localStorage persistence and backward compatibility; and updated styles.css with multi-sequencer and control styling.|
 

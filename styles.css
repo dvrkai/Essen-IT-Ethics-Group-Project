@@ -311,6 +311,106 @@ input[type="range"] {
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* Song Maker Styles */
+.song-maker {
+  margin-top: 3rem;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.song-maker h3 {
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.song-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.sequencers-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.sequencer-instance {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sequencer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.sequencer-header h4 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.sequencer-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sequencer-controls .control-btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.sequencer-controls .tempo-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sequencer-controls .tempo-control label {
+  font-size: 0.8rem;
+}
+
+.sequencer-controls .tempo-control input[type="range"] {
+  width: 100px;
+}
+
+.song-management {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.song-management h4 {
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+}
+
+#saveSongSlotSelect {
+  background: white;
+  color: black;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
 @media (max-width: 600px) {
   .sliders, .keys {
     gap: 0.5rem;

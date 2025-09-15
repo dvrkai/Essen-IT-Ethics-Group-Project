@@ -346,23 +346,109 @@ distortionSlider.addEventListener("input", () => {
 // Instrument change
 instrumentSelect.addEventListener("change", setupAudio);
 
-// Step Sequencer Variables
-let sequencerPattern = {};
-let isPlaying = false;
-let isLooping = false;
-let currentStep = 0;
-let tempo = 120;
-let sequencerInterval = null;
-let stepElements = [];
+// Step Sequencer Variables (refactored for multiple sequencers)
+class Sequencer {
+  constructor(id, pattern = null, tempo = 120, isLooping = false) {
+    this.id = id;
+    this.pattern = pattern || this.initializePattern();
+    this.isPlaying = false;
+    this.isLooping = isLooping;
+    this.currentStep = 0;
+    this.tempo = tempo;
+    this.interval = null;
+    this.stepElements = [];
+    this.element = null; // DOM element for this sequencer
+  }
+
+  initializePattern() {
+    const pattern = {};
+    notes.forEach(note => {
+      pattern[note] = new Array(8).fill(false);
+    });
+    return pattern;
+  }
+
+  start() {
+    Tone.start();
+    this.isPlaying = true;
+    this.currentStep = 0;
+
+    const intervalMs = (60 / this.tempo) * 250;
+    this.interval = setInterval(() => {
+      this.playStep();
+      this.currentStep = (this.currentStep + 1) % 8;
+
+      if (this.currentStep === 0 && !this.isLooping) {
+        this.stop();
+      }
+    }, intervalMs);
+
+    this.playStep(); // Play first step immediately
+  }
+
+  stop() {
+    this.isPlaying = false;
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
+    this.clearStepHighlighting();
+    this.currentStep = 0;
+  }
+
+  playStep() {
+    this.clearStepHighlighting();
+    if (this.stepElements[this.currentStep]) {
+      this.stepElements[this.currentStep].classList.add('current-step');
+    }
+
+    notes.forEach(note => {
+      if (this.pattern[note][this.currentStep]) {
+        playNote(note);
+      }
+    });
+  }
+
+  clearStepHighlighting() {
+    this.stepElements.forEach(el => el.classList.remove('current-step'));
+  }
+
+  toggleStep(note, step) {
+    this.pattern[note][step] = !this.pattern[note][step];
+  }
+
+  clearPattern() {
+    notes.forEach(note => {
+      this.pattern[note] = new Array(8).fill(false);
+    });
+  }
+
+  toJSON() {
+    return {
+      pattern: this.pattern,
+      tempo: this.tempo,
+      isLooping: this.isLooping
+    };
+  }
+
+  fromJSON(data) {
+    this.pattern = data.pattern;
+    this.tempo = data.tempo;
+    this.isLooping = data.isLooping;
+  }
+}
+
+let sequencers = [];
+let nextSequencerId = 1;
 
 // Initialize sequencer pattern
 function initializeSequencer() {
-  notes.forEach(note => {
-    sequencerPattern[note] = new Array(8).fill(false);
-  });
-  
-  // Get all step elements
-  stepElements = document.querySelectorAll('.step-number');
+  // Create the first sequencer (original one)
+  const firstSequencer = new Sequencer(nextSequencerId++);
+  sequencers.push(firstSequencer);
+
+  // Get all step elements for the first sequencer
+  firstSequencer.stepElements = document.querySelectorAll('.step-number');
 }
 
 // Step Sequencer DOM elements
@@ -373,126 +459,223 @@ const tempoSlider = document.getElementById('tempoSlider');
 const tempoValue = document.getElementById('tempoValue');
 const stepCells = document.querySelectorAll('.step-cell');
 
-// Step cell click handlers
+// Step cell click handlers for the first sequencer
 stepCells.forEach(cell => {
   cell.addEventListener('click', () => {
     const noteRow = cell.closest('.note-row');
     const note = noteRow.dataset.note;
     const step = parseInt(cell.dataset.step);
-    
-    // Toggle step
-    sequencerPattern[note][step] = !sequencerPattern[note][step];
-    cell.classList.toggle('active', sequencerPattern[note][step]);
+
+    // Toggle step for the first sequencer
+    const sequencer = sequencers[0];
+    sequencer.toggleStep(note, step);
+    cell.classList.toggle('active', sequencer.pattern[note][step]);
   });
 });
 
-// Play/Stop button
+// Play/Stop button for the first sequencer
 playStopBtn.addEventListener('click', () => {
-  if (isPlaying) {
-    stopSequencer();
+  const sequencer = sequencers[0];
+  if (sequencer.isPlaying) {
+    sequencer.stop();
+    playStopBtn.textContent = '▶️ Start';
+    playStopBtn.classList.remove('active');
   } else {
-    startSequencer();
+    sequencer.start();
+    playStopBtn.textContent = '⏸️ Stop';
+    playStopBtn.classList.add('active');
   }
 });
 
-// Loop toggle button
+// Loop toggle button for the first sequencer
 loopToggleBtn.addEventListener('click', () => {
-  isLooping = !isLooping;
-  loopToggleBtn.textContent = isLooping ? '🔄 Loop: ON' : '🔄 Loop: OFF';
-  loopToggleBtn.classList.toggle('active', isLooping);
+  const sequencer = sequencers[0];
+  sequencer.isLooping = !sequencer.isLooping;
+  loopToggleBtn.textContent = sequencer.isLooping ? '🔄 Loop: ON' : '🔄 Loop: OFF';
+  loopToggleBtn.classList.toggle('active', sequencer.isLooping);
 });
 
-// Clear all button
+// Clear all button for the first sequencer
 clearAllBtn.addEventListener('click', () => {
+  const sequencer = sequencers[0];
+
   // Clear pattern
-  notes.forEach(note => {
-    sequencerPattern[note] = new Array(8).fill(false);
-  });
-  
+  sequencer.clearPattern();
+
   // Clear visual state
   stepCells.forEach(cell => {
     cell.classList.remove('active');
   });
-  
+
   // Stop sequencer if playing
-  if (isPlaying) {
-    stopSequencer();
+  if (sequencer.isPlaying) {
+    sequencer.stop();
+    playStopBtn.textContent = '▶️ Start';
+    playStopBtn.classList.remove('active');
   }
 });
 
-// Tempo slider
+// Tempo slider for the first sequencer
 tempoSlider.addEventListener('input', () => {
-  tempo = parseInt(tempoSlider.value);
-  tempoValue.textContent = tempo;
-  
+  const sequencer = sequencers[0];
+  sequencer.tempo = parseInt(tempoSlider.value);
+  tempoValue.textContent = sequencer.tempo;
+
   // If playing, restart with new tempo
-  if (isPlaying) {
-    stopSequencer();
-    startSequencer();
+  if (sequencer.isPlaying) {
+    sequencer.stop();
+    sequencer.start();
   }
 });
 
-// Start sequencer
-function startSequencer() {
-  Tone.start(); // Ensure audio context is started
-  
-  isPlaying = true;
-  currentStep = 0;
-  playStopBtn.textContent = '⏸️ Stop';
-  playStopBtn.classList.add('active');
-  
-  // Calculate interval based on tempo (quarter notes)
-  const intervalMs = (60 / tempo) * 250; // 250ms for 16th notes at 120 BPM
-  
-  sequencerInterval = setInterval(() => {
-    playSequencerStep();
-    currentStep = (currentStep + 1) % 8;
-    
-    // Check if we've completed a loop
-    if (currentStep === 0 && !isLooping) {
-      stopSequencer();
+// Functions for multi-sequencer management
+function addSequencer() {
+  const sequencer = new Sequencer(nextSequencerId++);
+  sequencers.push(sequencer);
+  renderSequencer(sequencer);
+}
+
+function removeSequencer(sequencerId) {
+  const index = sequencers.findIndex(seq => seq.id === sequencerId);
+  if (index !== -1) {
+    const sequencer = sequencers[index];
+    if (sequencer.isPlaying) {
+      sequencer.stop();
     }
-  }, intervalMs);
-  
-  // Play first step immediately
-  playSequencerStep();
+    if (sequencer.element) {
+      sequencer.element.remove();
+    }
+    sequencers.splice(index, 1);
+  }
 }
 
-// Stop sequencer
-function stopSequencer() {
-  isPlaying = false;
-  playStopBtn.textContent = '▶️ Start';
-  playStopBtn.classList.remove('active');
-  
-  if (sequencerInterval) {
-    clearInterval(sequencerInterval);
-    sequencerInterval = null;
-  }
-  
-  // Clear step highlighting
-  stepElements.forEach(el => el.classList.remove('current-step'));
-  currentStep = 0;
-}
-
-// Play current sequencer step
-function playSequencerStep() {
-  // Clear previous step highlighting
-  stepElements.forEach(el => el.classList.remove('current-step'));
-  
-  // Highlight current step
-  if (stepElements[currentStep]) {
-    stepElements[currentStep].classList.add('current-step');
-  }
-  
-  // Play notes for current step
-  notes.forEach(note => {
-    if (sequencerPattern[note][currentStep]) {
-      playNote(note);
+function playAllSequencers() {
+  sequencers.forEach(seq => {
+    if (!seq.isPlaying) {
+      seq.start();
     }
   });
 }
 
-// --- PATTERN SAVE/LOAD ---
+function stopAllSequencers() {
+  sequencers.forEach(seq => {
+    if (seq.isPlaying) {
+      seq.stop();
+    }
+  });
+}
+
+function renderSequencer(sequencer) {
+  const container = document.getElementById('sequencersContainer');
+
+  const sequencerDiv = document.createElement('div');
+  sequencerDiv.className = 'sequencer-instance';
+  sequencerDiv.dataset.id = sequencer.id;
+
+  sequencerDiv.innerHTML = `
+    <div class="sequencer-header">
+      <h4>Sequencer ${sequencer.id}</h4>
+      <div class="sequencer-controls">
+        <button class="play-sequencer-btn control-btn" data-id="${sequencer.id}">▶️ Play</button>
+        <button class="stop-sequencer-btn control-btn" data-id="${sequencer.id}">⏸️ Stop</button>
+        <button class="clear-sequencer-btn control-btn" data-id="${sequencer.id}">🗑️ Clear</button>
+        <button class="remove-sequencer-btn control-btn" data-id="${sequencer.id}">❌ Remove</button>
+        <div class="tempo-control">
+          <label>Tempo: <span class="tempo-value">${sequencer.tempo}</span> BPM</label>
+          <input type="range" class="tempo-slider" data-id="${sequencer.id}" min="60" max="180" value="${sequencer.tempo}">
+        </div>
+      </div>
+    </div>
+    <div class="sequencer-grid">
+      <div class="step-labels">
+        <div class="step-label">Step</div>
+        <div class="step-number">1</div>
+        <div class="step-number">2</div>
+        <div class="step-number">3</div>
+        <div class="step-number">4</div>
+        <div class="step-number">5</div>
+        <div class="step-number">6</div>
+        <div class="step-number">7</div>
+        <div class="step-number">8</div>
+      </div>
+      ${notes.map(note => {
+        const key = Object.keys(keyMap).find(k => keyMap[k] === note);
+        return `
+          <div class="note-row" data-note="${note}">
+            <div class="note-label">${key.toUpperCase()} (${note})</div>
+            ${Array.from({length: 8}, (_, i) => `<div class="step-cell" data-step="${i}"></div>`).join('')}
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  container.appendChild(sequencerDiv);
+  sequencer.element = sequencerDiv;
+
+  // Set up step elements
+  sequencer.stepElements = sequencerDiv.querySelectorAll('.step-number');
+
+  // Add event listeners
+  const playBtn = sequencerDiv.querySelector('.play-sequencer-btn');
+  const stopBtn = sequencerDiv.querySelector('.stop-sequencer-btn');
+  const clearBtn = sequencerDiv.querySelector('.clear-sequencer-btn');
+  const removeBtn = sequencerDiv.querySelector('.remove-sequencer-btn');
+  const tempoSlider = sequencerDiv.querySelector('.tempo-slider');
+  const tempoValue = sequencerDiv.querySelector('.tempo-value');
+  const stepCells = sequencerDiv.querySelectorAll('.step-cell');
+
+  playBtn.addEventListener('click', () => {
+    if (!sequencer.isPlaying) {
+      sequencer.start();
+      playBtn.textContent = '⏸️ Playing';
+      playBtn.classList.add('active');
+    }
+  });
+
+  stopBtn.addEventListener('click', () => {
+    if (sequencer.isPlaying) {
+      sequencer.stop();
+      playBtn.textContent = '▶️ Play';
+      playBtn.classList.remove('active');
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    sequencer.clearPattern();
+    stepCells.forEach(cell => cell.classList.remove('active'));
+    if (sequencer.isPlaying) {
+      sequencer.stop();
+      playBtn.textContent = '▶️ Play';
+      playBtn.classList.remove('active');
+    }
+  });
+
+  removeBtn.addEventListener('click', () => {
+    removeSequencer(sequencer.id);
+  });
+
+  tempoSlider.addEventListener('input', () => {
+    sequencer.tempo = parseInt(tempoSlider.value);
+    tempoValue.textContent = sequencer.tempo;
+    if (sequencer.isPlaying) {
+      sequencer.stop();
+      sequencer.start();
+    }
+  });
+
+  stepCells.forEach(cell => {
+    cell.addEventListener('click', () => {
+      const noteRow = cell.closest('.note-row');
+      const note = noteRow.dataset.note;
+      const step = parseInt(cell.dataset.step);
+      sequencer.toggleStep(note, step);
+      cell.classList.toggle('active', sequencer.pattern[note][step]);
+    });
+  });
+}
+
+// --- PATTERN SAVE/LOAD (for first sequencer) ---
 const saveSlotSelect = document.getElementById('saveSlotSelect');
 const savePatternBtn = document.getElementById('savePatternBtn');
 const loadPatternBtn = document.getElementById('loadPatternBtn');
@@ -502,11 +685,8 @@ const deletePatternBtn = document.getElementById('deletePatternBtn');
 savePatternBtn.addEventListener('click', () => {
   const slot = saveSlotSelect.value;
   const patterns = JSON.parse(localStorage.getItem('sequencerPatterns') || '{}');
-  patterns[slot] = {
-    pattern: sequencerPattern,
-    tempo: tempo,
-    isLooping: isLooping
-  };
+  const sequencer = sequencers[0];
+  patterns[slot] = sequencer.toJSON();
   localStorage.setItem('sequencerPatterns', JSON.stringify(patterns));
   alert(`Pattern saved to Slot ${slot}`);
 });
@@ -515,25 +695,25 @@ savePatternBtn.addEventListener('click', () => {
 loadPatternBtn.addEventListener('click', () => {
   const slot = saveSlotSelect.value;
   const patterns = JSON.parse(localStorage.getItem('sequencerPatterns') || '{}');
-  
+
   if (patterns[slot]) {
-    if (isPlaying) stopSequencer();
-    
-    const saved = patterns[slot];
-    sequencerPattern = saved.pattern;
-    tempo = saved.tempo || 120;
-    isLooping = saved.isLooping || false;
-    
+    const sequencer = sequencers[0];
+    if (sequencer.isPlaying) sequencer.stop();
+
+    sequencer.fromJSON(patterns[slot]);
+
     // Update UI
-    tempoSlider.value = tempo;
-    tempoValue.textContent = tempo;
-    loopToggleBtn.textContent = isLooping ? '🔄 Loop: ON' : '🔄 Loop: OFF';
-    loopToggleBtn.classList.toggle('active', isLooping);
-    
+    tempoSlider.value = sequencer.tempo;
+    tempoValue.textContent = sequencer.tempo;
+    loopToggleBtn.textContent = sequencer.isLooping ? '🔄 Loop: ON' : '🔄 Loop: OFF';
+    loopToggleBtn.classList.toggle('active', sequencer.isLooping);
+    playStopBtn.textContent = '▶️ Start';
+    playStopBtn.classList.remove('active');
+
     stepCells.forEach(cell => {
       const note = cell.closest('.note-row').dataset.note;
       const step = parseInt(cell.dataset.step);
-      cell.classList.toggle('active', sequencerPattern[note][step]);
+      cell.classList.toggle('active', sequencer.pattern[note][step]);
     });
     alert(`Pattern loaded from Slot ${slot}`);
   } else {
@@ -557,43 +737,144 @@ deletePatternBtn.addEventListener('click', () => {
     }
 });
 
+// --- SONG SAVE/LOAD ---
+const addSequencerBtn = document.getElementById('addSequencerBtn');
+const playAllBtn = document.getElementById('playAllBtn');
+const stopAllBtn = document.getElementById('stopAllBtn');
+const saveSongSlotSelect = document.getElementById('saveSongSlotSelect');
+const saveSongBtn = document.getElementById('saveSongBtn');
+const loadSongBtn = document.getElementById('loadSongBtn');
+const deleteSongBtn = document.getElementById('deleteSongBtn');
 
-// Add some preset patterns
-function loadPreset(presetName) {
-  // Stop current playback
-  if (isPlaying) {
-    stopSequencer();
+// Add sequencer button
+addSequencerBtn.addEventListener('click', () => {
+  addSequencer();
+});
+
+// Play all sequencers
+playAllBtn.addEventListener('click', () => {
+  playAllSequencers();
+});
+
+// Stop all sequencers
+stopAllBtn.addEventListener('click', () => {
+  stopAllSequencers();
+});
+
+// Save song to the selected slot
+saveSongBtn.addEventListener('click', () => {
+  const slot = saveSongSlotSelect.value;
+  const songs = JSON.parse(localStorage.getItem('sequencerSongs') || '{}');
+  songs[slot] = sequencers.map(seq => seq.toJSON());
+  localStorage.setItem('sequencerSongs', JSON.stringify(songs));
+  alert(`Song saved to Slot ${slot}`);
+});
+
+// Load song from the selected slot
+loadSongBtn.addEventListener('click', () => {
+  const slot = saveSongSlotSelect.value;
+  const songs = JSON.parse(localStorage.getItem('sequencerSongs') || '{}');
+
+  if (songs[slot]) {
+    // Stop all current sequencers
+    stopAllSequencers();
+
+    // Clear existing sequencers except the first one
+    while (sequencers.length > 1) {
+      removeSequencer(sequencers[sequencers.length - 1].id);
+    }
+
+    // Load the song data
+    const songData = songs[slot];
+    sequencers = [];
+
+    songData.forEach((seqData, index) => {
+      const sequencer = new Sequencer(nextSequencerId++, null, seqData.tempo, seqData.isLooping);
+      sequencer.fromJSON(seqData);
+      sequencers.push(sequencer);
+
+      if (index === 0) {
+        // Update the first sequencer UI
+        const firstSeq = sequencer;
+        tempoSlider.value = firstSeq.tempo;
+        tempoValue.textContent = firstSeq.tempo;
+        loopToggleBtn.textContent = firstSeq.isLooping ? '🔄 Loop: ON' : '🔄 Loop: OFF';
+        loopToggleBtn.classList.toggle('active', firstSeq.isLooping);
+        playStopBtn.textContent = '▶️ Start';
+        playStopBtn.classList.remove('active');
+
+        stepCells.forEach(cell => {
+          const note = cell.closest('.note-row').dataset.note;
+          const step = parseInt(cell.dataset.step);
+          cell.classList.toggle('active', firstSeq.pattern[note][step]);
+        });
+      } else {
+        // Render additional sequencers
+        renderSequencer(sequencer);
+      }
+    });
+
+    alert(`Song loaded from Slot ${slot}`);
+  } else {
+    alert(`Slot ${slot} is empty.`);
   }
-  
+});
+
+// Delete song from the selected slot
+deleteSongBtn.addEventListener('click', () => {
+    const slot = saveSongSlotSelect.value;
+    const songs = JSON.parse(localStorage.getItem('sequencerSongs') || '{}');
+
+    if (songs[slot]) {
+        if (confirm(`Are you sure you want to delete the song in Slot ${slot}?`)) {
+            delete songs[slot];
+            localStorage.setItem('sequencerSongs', JSON.stringify(songs));
+            alert(`Song in Slot ${slot} has been deleted.`);
+        }
+    } else {
+        alert(`Slot ${slot} is already empty.`);
+    }
+});
+
+
+// Add some preset patterns (for first sequencer)
+function loadPreset(presetName) {
+  const sequencer = sequencers[0];
+
+  // Stop current playback
+  if (sequencer.isPlaying) {
+    sequencer.stop();
+    playStopBtn.textContent = '▶️ Start';
+    playStopBtn.classList.remove('active');
+  }
+
   // Clear current pattern
-  notes.forEach(note => {
-    sequencerPattern[note] = new Array(8).fill(false);
-  });
-  
+  sequencer.clearPattern();
+
   switch (presetName) {
     case 'kick':
       // Simple kick pattern
-      sequencerPattern['C4'] = [true, false, false, false, true, false, false, false];
+      sequencer.pattern['C4'] = [true, false, false, false, true, false, false, false];
       break;
     case 'melody':
       // Simple melody
-      sequencerPattern['C4'] = [true, false, false, false, false, false, false, false];
-      sequencerPattern['E4'] = [false, false, true, false, false, false, true, false];
-      sequencerPattern['G4'] = [false, false, false, false, true, false, false, false];
+      sequencer.pattern['C4'] = [true, false, false, false, false, false, false, false];
+      sequencer.pattern['E4'] = [false, false, true, false, false, false, true, false];
+      sequencer.pattern['G4'] = [false, false, false, false, true, false, false, false];
       break;
     case 'rhythm':
       // Rhythmic pattern
-      sequencerPattern['C4'] = [true, false, true, false, true, false, true, false];
-      sequencerPattern['D4'] = [false, true, false, true, false, true, false, true];
+      sequencer.pattern['C4'] = [true, false, true, false, true, false, true, false];
+      sequencer.pattern['D4'] = [false, true, false, true, false, true, false, true];
       break;
   }
-  
+
   // Update visual state
   stepCells.forEach(cell => {
     const noteRow = cell.closest('.note-row');
     const note = noteRow.dataset.note;
     const step = parseInt(cell.dataset.step);
-    const isActive = sequencerPattern[note][step];
+    const isActive = sequencer.pattern[note][step];
     cell.classList.toggle('active', isActive);
   });
 }
@@ -604,32 +885,39 @@ document.addEventListener('keydown', (event) => {
   if (keyMap[event.key]) {
     return; // Let note playing take priority
   }
-  
+
   switch (event.key) {
-    case ' ': // Spacebar to play/stop
+    case ' ': // Spacebar to play/stop first sequencer
       event.preventDefault();
-      if (isPlaying) {
-        stopSequencer();
+      const sequencer = sequencers[0];
+      if (sequencer.isPlaying) {
+        sequencer.stop();
+        playStopBtn.textContent = '▶️ Start';
+        playStopBtn.classList.remove('active');
       } else {
-        startSequencer();
+        sequencer.start();
+        playStopBtn.textContent = '⏸️ Stop';
+        playStopBtn.classList.add('active');
       }
       break;
-    case 'l': // L to toggle loop
+    case 'l': // L to toggle loop for first sequencer
       event.preventDefault();
-      isLooping = !isLooping;
-      loopToggleBtn.textContent = isLooping ? '🔄 Loop: ON' : '🔄 Loop: OFF';
-      loopToggleBtn.classList.toggle('active', isLooping);
+      const seq = sequencers[0];
+      seq.isLooping = !seq.isLooping;
+      loopToggleBtn.textContent = seq.isLooping ? '🔄 Loop: ON' : '🔄 Loop: OFF';
+      loopToggleBtn.classList.toggle('active', seq.isLooping);
       break;
-    case 'c': // C to clear all
+    case 'c': // C to clear all for first sequencer
       event.preventDefault();
-      notes.forEach(note => {
-        sequencerPattern[note] = new Array(8).fill(false);
-      });
+      const clearSeq = sequencers[0];
+      clearSeq.clearPattern();
       stepCells.forEach(cell => {
         cell.classList.remove('active');
       });
-      if (isPlaying) {
-        stopSequencer();
+      if (clearSeq.isPlaying) {
+        clearSeq.stop();
+        playStopBtn.textContent = '▶️ Start';
+        playStopBtn.classList.remove('active');
       }
       break;
   }

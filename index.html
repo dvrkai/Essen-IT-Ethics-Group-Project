@@ -206,6 +206,35 @@
           <button id="deletePatternBtn" class="control-btn">Delete</button>
         </div>
       </div>
+
+      <!-- Song Maker Section -->
+      <div class="song-maker">
+        <h3>🎵 Song Maker</h3>
+        <div class="song-controls">
+          <button id="addSequencerBtn" class="control-btn">➕ Add Sequencer</button>
+          <button id="playAllBtn" class="control-btn">▶️ Play All</button>
+          <button id="stopAllBtn" class="control-btn">⏸️ Stop All</button>
+        </div>
+        <div id="sequencersContainer" class="sequencers-container">
+          <!-- Dynamic sequencer grids will be added here -->
+        </div>
+        <div class="song-management">
+          <h4>💾 Save/Load Song</h4>
+          <div class="song-controls">
+            <label for="saveSongSlotSelect">Save Slot:</label>
+            <select id="saveSongSlotSelect">
+              <option value="1">Song Slot 1</option>
+              <option value="2">Song Slot 2</option>
+              <option value="3">Song Slot 3</option>
+              <option value="4">Song Slot 4</option>
+              <option value="5">Song Slot 5</option>
+            </select>
+            <button id="saveSongBtn" class="control-btn">Save Song</button>
+            <button id="loadSongBtn" class="control-btn">Load Song</button>
+            <button id="deleteSongBtn" class="control-btn">Delete Song</button>
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 </body>

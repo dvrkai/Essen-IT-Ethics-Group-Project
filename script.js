@@ -440,6 +440,17 @@ class Sequencer {
 
 let sequencers = [];
 let nextSequencerId = 1;
+let isSongLooping = false;
+
+function getNextSequencerId() {
+  // Find the smallest positive integer not used by any sequencer id
+  let id = 1;
+  const usedIds = new Set(sequencers.map(seq => seq.id));
+  while (usedIds.has(id)) {
+    id++;
+  }
+  return id;
+}
 
 // Initialize sequencer pattern
 function initializeSequencer() {
@@ -530,7 +541,7 @@ tempoSlider.addEventListener('input', () => {
 
 // Functions for multi-sequencer management
 function addSequencer() {
-  const sequencer = new Sequencer(nextSequencerId++);
+  const sequencer = new Sequencer(getNextSequencerId());
   sequencers.push(sequencer);
   renderSequencer(sequencer);
 }
@@ -550,15 +561,19 @@ function removeSequencer(sequencerId) {
 }
 
 function playAllSequencers() {
-  sequencers.forEach(seq => {
+  // Only play sequencers from the song maker (skip the first one which is the original step sequencer)
+  sequencers.slice(1).forEach(seq => {
     if (!seq.isPlaying) {
+      // Set individual sequencer looping based on song loop setting
+      seq.isLooping = isSongLooping;
       seq.start();
     }
   });
 }
 
 function stopAllSequencers() {
-  sequencers.forEach(seq => {
+  // Only stop sequencers from the song maker (skip the first one which is the original step sequencer)
+  sequencers.slice(1).forEach(seq => {
     if (seq.isPlaying) {
       seq.stop();
     }
@@ -746,6 +761,8 @@ const saveSongBtn = document.getElementById('saveSongBtn');
 const loadSongBtn = document.getElementById('loadSongBtn');
 const deleteSongBtn = document.getElementById('deleteSongBtn');
 
+let loopSongBtn = document.getElementById('loopSongBtn');
+
 // Add sequencer button
 addSequencerBtn.addEventListener('click', () => {
   addSequencer();
@@ -761,11 +778,27 @@ stopAllBtn.addEventListener('click', () => {
   stopAllSequencers();
 });
 
+// Loop song button
+loopSongBtn.addEventListener('click', () => {
+  isSongLooping = !isSongLooping;
+  loopSongBtn.textContent = isSongLooping ? '🔄 Loop Song: ON' : '🔄 Loop Song: OFF';
+
+  // Update looping for currently playing song maker sequencers
+  sequencers.slice(1).forEach(seq => {
+    if (seq.isPlaying) {
+      seq.isLooping = isSongLooping;
+    }
+  });
+});
+
 // Save song to the selected slot
 saveSongBtn.addEventListener('click', () => {
   const slot = saveSongSlotSelect.value;
   const songs = JSON.parse(localStorage.getItem('sequencerSongs') || '{}');
-  songs[slot] = sequencers.map(seq => seq.toJSON());
+  songs[slot] = {
+    sequencers: sequencers.map(seq => seq.toJSON()),
+    isSongLooping: isSongLooping
+  };
   localStorage.setItem('sequencerSongs', JSON.stringify(songs));
   alert(`Song saved to Slot ${slot}`);
 });
@@ -779,17 +812,19 @@ loadSongBtn.addEventListener('click', () => {
     // Stop all current sequencers
     stopAllSequencers();
 
-    // Clear existing sequencers except the first one
-    while (sequencers.length > 1) {
+    // Clear all existing sequencers (including the first one)
+    while (sequencers.length > 0) {
       removeSequencer(sequencers[sequencers.length - 1].id);
     }
 
     // Load the song data
     const songData = songs[slot];
+    isSongLooping = songData.isSongLooping || false;
+    loopSongBtn.textContent = isSongLooping ? '🔄 Loop Song: ON' : '🔄 Loop Song: OFF';
     sequencers = [];
 
-    songData.forEach((seqData, index) => {
-      const sequencer = new Sequencer(nextSequencerId++, null, seqData.tempo, seqData.isLooping);
+    (songData.sequencers || songData).forEach((seqData, index) => {
+      const sequencer = new Sequencer(getNextSequencerId(), null, seqData.tempo, seqData.isLooping);
       sequencer.fromJSON(seqData);
       sequencers.push(sequencer);
 
@@ -811,6 +846,15 @@ loadSongBtn.addEventListener('click', () => {
       } else {
         // Render additional sequencers
         renderSequencer(sequencer);
+        // Update visual state for the rendered sequencer
+        const sequencerElement = sequencer.element;
+        const stepCells = sequencerElement.querySelectorAll('.step-cell');
+        stepCells.forEach(cell => {
+          const noteRow = cell.closest('.note-row');
+          const note = noteRow.dataset.note;
+          const step = parseInt(cell.dataset.step);
+          cell.classList.toggle('active', sequencer.pattern[note][step]);
+        });
       }
     });
 

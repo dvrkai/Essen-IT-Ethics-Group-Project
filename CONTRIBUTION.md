@@ -59,4 +59,9 @@ Document major design and ethics decisions in /docs.
 
 | Name | Contribution |
 |------|---------------|
-| Thao | Overlooked code and changes, made starting files and basics, added volume adjusters, frequency, reverb, distortions, and key maps |
+| Thao | Overlooked code and changes with bug fixes, made starting files and basics, added volume adjusters, frequency, reverb, distortions, and key maps |
+| Binh |  |
+| Minh |  |
+| Bang Anh |  |
+| Kiet |  |
+
